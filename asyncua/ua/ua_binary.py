@@ -73,17 +73,17 @@ class _Bytes:
 
 class _String:
     @staticmethod
-    def pack(string):
+    def pack(string, encoding="utf-8"):
         if string is not None:
-            string = string.encode("utf-8")
+            string = string.encode(encoding, errors="surrogateescape")
         return _Bytes.pack(string)
 
     @staticmethod
-    def unpack(data):
+    def unpack(data, encoding="utf-8"):
         b = _Bytes.unpack(data)
         if b is None:
             return b
-        return b.decode("utf-8", errors="replace")  # not need to be strict here, this is user data
+        return b.decode(encoding, errors="surrogateescape")  # surrogates fixes read related problems
 
 
 class _Null:
@@ -418,7 +418,7 @@ def list_to_binary(uatype, val):
     return create_list_serializer(uatype)(val)
 
 
-def nodeid_to_binary(nodeid):
+def nodeid_to_binary(nodeid, encoding="utf-8"):
     if nodeid.NodeIdType == ua.NodeIdType.TwoByte:
         data = struct.pack("<BB", nodeid.NodeIdType.value, nodeid.Identifier)
     elif nodeid.NodeIdType == ua.NodeIdType.FourByte:
@@ -427,7 +427,7 @@ def nodeid_to_binary(nodeid):
         data = struct.pack("<BHI", nodeid.NodeIdType.value, nodeid.NamespaceIndex, nodeid.Identifier)
     elif nodeid.NodeIdType == ua.NodeIdType.String:
         data = struct.pack("<BH", nodeid.NodeIdType.value, nodeid.NamespaceIndex) + Primitives.String.pack(
-            nodeid.Identifier
+            nodeid.Identifier, encoding
         )
     elif nodeid.NodeIdType == ua.NodeIdType.ByteString:
         data = struct.pack("<BH", nodeid.NodeIdType.value, nodeid.NamespaceIndex) + Primitives.Bytes.pack(
@@ -443,7 +443,7 @@ def nodeid_to_binary(nodeid):
     if hasattr(nodeid, "NamespaceUri") and nodeid.NamespaceUri:
         data = bytearray(data)
         data[0] = set_bit(data[0], 7)
-        data.extend(Primitives.String.pack(nodeid.NamespaceUri))
+        data.extend(Primitives.String.pack(nodeid.NamespaceUri, encoding))
     if hasattr(nodeid, "ServerIndex") and nodeid.ServerIndex:
         if not isinstance(data, bytearray):
             data = bytearray(data)
@@ -452,7 +452,7 @@ def nodeid_to_binary(nodeid):
     return data
 
 
-def nodeid_from_binary(data: Union[BytesIO, Buffer]) -> Union[ua.NodeId, ua.ExpandedNodeId]:
+def nodeid_from_binary(data: Union[BytesIO, Buffer], encoding_str="utf-8") -> Union[ua.NodeId, ua.ExpandedNodeId]:
     encoding = ord(data.read(1))
     nidtype = ua.NodeIdType(encoding & 0b00111111)
     uri = None
@@ -467,7 +467,7 @@ def nodeid_from_binary(data: Union[BytesIO, Buffer]) -> Union[ua.NodeId, ua.Expa
         nidx, identifier = struct.unpack("<HI", data.read(6))
     elif nidtype == ua.NodeIdType.String:
         nidx = Primitives.UInt16.unpack(data)
-        identifier = Primitives.String.unpack(data)
+        identifier = Primitives.String.unpack(data, encoding_str)
     elif nidtype == ua.NodeIdType.ByteString:
         nidx = Primitives.UInt16.unpack(data)
         identifier = Primitives.Bytes.unpack(data)
@@ -478,7 +478,7 @@ def nodeid_from_binary(data: Union[BytesIO, Buffer]) -> Union[ua.NodeId, ua.Expa
         raise UaError(f"Unknown NodeId encoding: {nidtype}")
 
     if test_bit(encoding, 7):
-        uri = Primitives.String.unpack(data)
+        uri = Primitives.String.unpack(data, encoding_str)
     if test_bit(encoding, 6):
         server_idx = Primitives.UInt32.unpack(data)
 
@@ -533,12 +533,12 @@ def _reshape(flat, dims):
     return [_reshape(flat[i : i + subsize], subdims) for i in range(0, len(flat), subsize)]
 
 
-def extensionobject_from_binary(data: Buffer) -> ua.ExtensionObject:
+def extensionobject_from_binary(data: Buffer, encoding = "utf-8") -> ua.ExtensionObject:
     """
     Convert binary-coded ExtensionObject to a Python object.
     Returns an object, or None if TypeId is zero
     """
-    typeid = nodeid_from_binary(data)
+    typeid = nodeid_from_binary(data, encoding)
     encoding = ord(data.read(1))
     body = None
     if encoding & (1 << 0):
@@ -569,7 +569,7 @@ def extensionobject_from_binary(data: Buffer) -> ua.ExtensionObject:
     return e
 
 
-def extensionobject_to_binary(obj):
+def extensionobject_to_binary(obj, encoding_str="utf-8"):
     """
     Convert Python object to binary-coded ExtensionObject.
     If obj is None, convert to empty ExtensionObject (TypeId=0, no Body).
@@ -586,7 +586,7 @@ def extensionobject_to_binary(obj):
         encoding = 0x01
         body = struct_to_binary(obj)
     packet = [
-        nodeid_to_binary(type_id),
+        nodeid_to_binary(type_id, encoding_str),
         Primitives.Byte.pack(encoding),
     ]
     if body:

@@ -84,7 +84,7 @@ class Server:
         server listens on some internal IP.
     """
 
-    def __init__(self, iserver: InternalServer = None, user_manager=None):
+    def __init__(self, iserver: InternalServer = None, user_manager=None, encoding="utf-8"):
         self.endpoint = urlparse("opc.tcp://0.0.0.0:4840/freeopcua/server/")
         self._application_uri = "urn:freeopcua:python:server"
         self.product_uri = "urn:freeopcua.github.io:python:server"
@@ -121,6 +121,7 @@ class Server:
             max_chunk_count=math.ceil(max_msg_sz / buffer_sz),  # Round up to allow max msg size
             max_message_size=max_msg_sz,
         )
+        self.encoding = encoding
 
     async def init(self, shelf_file: Optional[Path] = None):
         await self.iserver.init(shelf_file)
@@ -490,7 +491,7 @@ class Server:
         await self.iserver.start()
         try:
             ipaddress, port = self._get_bind_socket_info()
-            self.bserver = BinaryServer(self.iserver, ipaddress, port, self.limits)
+            self.bserver = BinaryServer(self.iserver, ipaddress, port, self.limits, self.encoding)
             self.bserver.set_policies(self._policies)
             await self.bserver.start()
         except Exception as exp:

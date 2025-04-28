@@ -20,7 +20,9 @@ class OPCUAProtocol(asyncio.Protocol):
     Instantiated for every connection.
     """
 
-    def __init__(self, iserver: InternalServer, policies, clients, closing_tasks, limits: TransportLimits):
+    def __init__(
+        self, iserver: InternalServer, policies, clients, closing_tasks, limits: TransportLimits, encoding: str = "utf-8"
+    ):
         self.peer_name = None
         self.transport = None
         self.processor = None
@@ -32,6 +34,7 @@ class OPCUAProtocol(asyncio.Protocol):
         self.messages = asyncio.Queue()
         self.limits = limits
         self._task = None
+        self.encoding = encoding
 
     def __str__(self):
         return f"OPCUAProtocol({self.peer_name}, {self.processor.session})"
@@ -42,7 +45,7 @@ class OPCUAProtocol(asyncio.Protocol):
         self.peer_name = transport.get_extra_info("peername")
         _logger.info("New connection from %s", self.peer_name)
         self.transport = transport
-        self.processor = UaProcessor(self.iserver, self.transport, self.limits)
+        self.processor = UaProcessor(self.iserver, self.transport, self.limits, self.encoding)
         self.processor.set_policies(self.policies)
         self.iserver.asyncio_transports.append(transport)
         self.clients.append(self)
@@ -113,7 +116,7 @@ class OPCUAProtocol(asyncio.Protocol):
 
 
 class BinaryServer:
-    def __init__(self, internal_server: InternalServer, hostname, port, limits: TransportLimits):
+    def __init__(self, internal_server: InternalServer, hostname, port, limits: TransportLimits, encoding: str = "utf-8"):
         self.logger = logging.getLogger(__name__)
         self.hostname = hostname
         self.port = port
@@ -124,6 +127,7 @@ class BinaryServer:
         self.closing_tasks = []
         self.cleanup_task = None
         self.limits = limits
+        self.encoding = encoding
 
     def set_policies(self, policies):
         self._policies = policies
@@ -136,6 +140,7 @@ class BinaryServer:
             clients=self.clients,
             closing_tasks=self.closing_tasks,
             limits=self.limits,
+            encoding=self.encoding,
         )
 
     async def start(self):

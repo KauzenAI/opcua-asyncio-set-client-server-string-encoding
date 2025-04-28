@@ -28,7 +28,7 @@ class UaProcessor:
     Processor for OPC UA messages. Implements the OPC UA protocol for the server side.
     """
 
-    def __init__(self, internal_server: InternalServer, transport, limits: TransportLimits):
+    def __init__(self, internal_server: InternalServer, transport, limits: TransportLimits, encoding: str = "utf-8"):
         self.iserver: InternalServer = internal_server
         self.name = transport.get_extra_info("peername")
         self.sockname = transport.get_extra_info("sockname")
@@ -45,6 +45,7 @@ class UaProcessor:
         self._closing: bool = False
         self._session_watchdog_task: Optional[asyncio.Task] = None
         self._watchdog_interval: float = 1.0
+        self.encoding = encoding
 
     def set_policies(self, policies):
         self._connection.set_policy_factories(policies)
@@ -140,7 +141,7 @@ class UaProcessor:
         """
         Process incoming messages.
         """
-        typeid = nodeid_from_binary(body)
+        typeid = nodeid_from_binary(body, self.encoding)
         requesthdr = struct_from_binary(ua.RequestHeader, body)
         _logger.debug("process_message %r %r", typeid, requesthdr)
         try:
