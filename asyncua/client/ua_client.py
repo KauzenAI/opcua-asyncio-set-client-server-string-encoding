@@ -11,7 +11,8 @@ from asyncua import ua
 from asyncua.common.session_interface import AbstractSession
 from ..common.utils import wait_for
 from asyncua.ua.uaerrors._base import UaError
-from ..ua.ua_binary import struct_from_binary, uatcp_to_binary, struct_to_binary, nodeid_from_binary, header_from_binary
+from ..ua.ua_binary import struct_from_binary, uatcp_to_binary, struct_to_binary, nodeid_from_binary, \
+    header_from_binary, LowApiConfig
 from ..ua.uaerrors import BadTimeout, BadNoSubscription, BadSessionClosed, BadUserAccessDenied, UaStructParsingError
 from ..ua.uaprotocol_auto import OpenSecureChannelResult, SubscriptionAcknowledgement
 from ..common.connection import SecureConnection, TransportLimits
@@ -288,7 +289,7 @@ class UaClient(AbstractSession):
     uaprotocol_auto.py and uaprotocol_hand.py available under asyncua.ua
     """
 
-    def __init__(self, timeout: float = 1.0):
+    def __init__(self, timeout: float = 1.0, encoding = "utf-8"):
         """
         :param timeout: Timout in seconds
         """
@@ -300,6 +301,7 @@ class UaClient(AbstractSession):
         self._publish_task = None
         self._pre_request_hook: Optional[Callable[[], Awaitable[None]]] = None
         self._closing: bool = False
+        LowApiConfig.String_Encoding = encoding
 
     def set_security(self, policy: security_policies.SecurityPolicy):
         self.security_policy = policy
