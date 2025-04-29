@@ -85,7 +85,7 @@ class Server:
         server listens on some internal IP.
     """
 
-    def __init__(self, iserver: InternalServer = None, user_manager=None, encoding = "utf-8"):
+    def __init__(self, iserver: InternalServer = None, user_manager=None, encoding="utf-8"):
         self.endpoint = urlparse("opc.tcp://0.0.0.0:4840/freeopcua/server/")
         self._application_uri = "urn:freeopcua:python:server"
         self.product_uri = "urn:freeopcua.github.io:python:server"
