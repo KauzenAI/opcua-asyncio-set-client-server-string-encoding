@@ -612,10 +612,10 @@ class NodeId:
         string.append(f"{ntype}={identifier}")
         return ";".join(string)
 
-    def to_binary(self, encoding="utf-8"):
+    def to_binary(self):
         import asyncua
 
-        return asyncua.ua.ua_binary.nodeid_to_binary(self, encoding)
+        return asyncua.ua.ua_binary.nodeid_to_binary(self)
 
 
 @dataclass(frozen=True, eq=False, order=False)

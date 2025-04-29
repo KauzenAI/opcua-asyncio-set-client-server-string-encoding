@@ -41,7 +41,7 @@ class Client:
     _password: Optional[str] = None
     strip_url_credentials: bool = True
 
-    def __init__(self, url: str, timeout: float = 4, watchdog_intervall: float = 1.0, encoding: str = "utf-8"):
+    def __init__(self, url: str, timeout: float = 4, watchdog_intervall: float = 1.0):
         """
         :param url: url of the server.
             if you are unsure of url, write at least hostname
@@ -75,7 +75,7 @@ class Client:
         self.session_timeout = 3600000  # 1 hour
         self.connection_lost_callback: Optional[Callable[[Exception], Coroutine[Any, Any, None]]] = None
         self._policy_ids: List[ua.UserTokenPolicy] = []
-        self.uaclient: UaClient = UaClient(timeout, encoding)
+        self.uaclient: UaClient = UaClient(timeout)
         self.uaclient.pre_request_hook = self.check_connection
         self.user_certificate: Optional[x509.Certificate] = None
         self.user_private_key: Optional[PrivateKeyTypes] = None

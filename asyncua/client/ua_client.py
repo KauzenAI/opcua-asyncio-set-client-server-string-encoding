@@ -33,7 +33,6 @@ class UASocketProtocol(asyncio.Protocol):
         timeout: float = 1,
         security_policy: security_policies.SecurityPolicy = security_policies.SecurityPolicyNone(),
         limits: TransportLimits = None,
-        encoding: str = "utf-8",
     ):
         """
         :param timeout: Timeout in seconds
@@ -63,7 +62,6 @@ class UASocketProtocol(asyncio.Protocol):
         ] = None
         # Hook for upper layer tasks before a request is sent (optional)
         self.pre_request_hook: Optional[Callable[[], Awaitable[None]]] = None
-        self.encoding = encoding
 
     def connection_made(self, transport: asyncio.Transport):  # type: ignore[override]
         self.state = self.OPEN
@@ -193,7 +191,7 @@ class UASocketProtocol(asyncio.Protocol):
 
     def check_answer(self, data, context):
         data = data.copy()
-        typeid = nodeid_from_binary(data, self.encoding)
+        typeid = nodeid_from_binary(data)
         if typeid == ua.FourByteNodeId(ua.ObjectIds.ServiceFault_Encoding_DefaultBinary):
             hdr = struct_from_binary(ua.ResponseHeader, data)
             self.logger.warning(
@@ -290,7 +288,7 @@ class UaClient(AbstractSession):
     uaprotocol_auto.py and uaprotocol_hand.py available under asyncua.ua
     """
 
-    def __init__(self, timeout: float = 1.0, encoding: str = "utf-8"):
+    def __init__(self, timeout: float = 1.0):
         """
         :param timeout: Timout in seconds
         """
@@ -302,13 +300,12 @@ class UaClient(AbstractSession):
         self._publish_task = None
         self._pre_request_hook: Optional[Callable[[], Awaitable[None]]] = None
         self._closing: bool = False
-        self.encoding = encoding
 
     def set_security(self, policy: security_policies.SecurityPolicy):
         self.security_policy = policy
 
     def _make_protocol(self):
-        self.protocol = UASocketProtocol(self._timeout, security_policy=self.security_policy, encoding=self.encoding)
+        self.protocol = UASocketProtocol(self._timeout, security_policy=self.security_policy)
         self.protocol.pre_request_hook = self._pre_request_hook
         return self.protocol
 

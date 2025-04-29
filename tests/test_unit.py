@@ -155,8 +155,8 @@ def test_custom_structs_array(tmpdir):
 
 def test_nodeid_nsu():
     n1 = ua.ExpandedNodeId(100, 2, NamespaceUri="http://freeopcua/tests", ServerIndex=4)
-    data = nodeid_to_binary(n1, "utf-8")
-    n2 = nodeid_from_binary(ua.utils.Buffer(data), "utf-8")
+    data = nodeid_to_binary(n1)
+    n2 = nodeid_from_binary(ua.utils.Buffer(data))
     assert n1 == n2
     string = n1.to_string()
     n3 = ua.NodeId.from_string(string)
@@ -418,8 +418,8 @@ def test__nodeid():
     assert nid.NodeIdType == ua.NodeIdType.TwoByte
     nid = ua.NodeId(446, 3, ua.NodeIdType.FourByte)
     assert nid.NodeIdType == ua.NodeIdType.FourByte
-    d = nodeid_to_binary(nid, "utf-8")
-    new_nid = nodeid_from_binary(io.BytesIO(d), "utf-8")
+    d = nodeid_to_binary(nid)
+    new_nid = nodeid_from_binary(io.BytesIO(d))
     assert new_nid == nid
     assert new_nid.NodeIdType == ua.NodeIdType.FourByte
     assert new_nid.Identifier == 446
@@ -438,12 +438,12 @@ def test__nodeid():
     assert tb == n1
     assert n1 == fb
     assert g != guid
-    assert tb == nodeid_from_binary(ua.utils.Buffer(nodeid_to_binary(tb, "utf-8")), "utf-8")
-    assert fb == nodeid_from_binary(ua.utils.Buffer(nodeid_to_binary(fb, "utf-8")), "utf-8")
-    assert n == nodeid_from_binary(ua.utils.Buffer(nodeid_to_binary(n, "utf-8")), "utf-8")
-    assert s1 == nodeid_from_binary(ua.utils.Buffer(nodeid_to_binary(s1, "utf-8")), "utf-8")
-    assert bs == nodeid_from_binary(ua.utils.Buffer(nodeid_to_binary(bs, "utf-8")), "utf-8")
-    assert guid == nodeid_from_binary(ua.utils.Buffer(nodeid_to_binary(guid, "utf-8")), "utf-8")
+    assert tb == nodeid_from_binary(ua.utils.Buffer(nodeid_to_binary(tb)))
+    assert fb == nodeid_from_binary(ua.utils.Buffer(nodeid_to_binary(fb)))
+    assert n == nodeid_from_binary(ua.utils.Buffer(nodeid_to_binary(n)))
+    assert s1 == nodeid_from_binary(ua.utils.Buffer(nodeid_to_binary(s1)))
+    assert bs == nodeid_from_binary(ua.utils.Buffer(nodeid_to_binary(bs)))
+    assert guid == nodeid_from_binary(ua.utils.Buffer(nodeid_to_binary(guid)))
 
 
 def test_nodeid_string():
@@ -491,7 +491,7 @@ def test_bad_string():
 def test_expandednodeid():
     nid = ua.ExpandedNodeId()
     assert nid.NodeIdType == ua.NodeIdType.TwoByte
-    nid2 = nodeid_from_binary(ua.utils.Buffer(nodeid_to_binary(nid, "utf-8")), "utf-8")
+    nid2 = nodeid_from_binary(ua.utils.Buffer(nodeid_to_binary(nid)))
     assert nid == nid2
 
 
@@ -526,7 +526,7 @@ def test_null_string():
 
 def test_empty_extension_object():
     obj = ua.ExtensionObject()
-    obj2 = extensionobject_from_binary(ua.utils.Buffer(extensionobject_to_binary(obj)), "utf-8")
+    obj2 = extensionobject_from_binary(ua.utils.Buffer(extensionobject_to_binary(obj)))
     assert type(obj) is type(obj2)
     assert obj == obj2
 
@@ -535,7 +535,7 @@ def test_extension_object():
     obj = ua.UserNameIdentityToken()
     obj.UserName = "admin"
     obj.Password = b"pass"
-    obj2 = extensionobject_from_binary(ua.utils.Buffer(extensionobject_to_binary(obj)), "utf-8")
+    obj2 = extensionobject_from_binary(ua.utils.Buffer(extensionobject_to_binary(obj)))
     assert type(obj) is type(obj2)
     assert obj.UserName == obj2.UserName
     assert obj.Password == obj2.Password
@@ -551,7 +551,7 @@ def test_unknown_extension_object():
         TypeId=ua.NodeId.from_string("ns=3;i=42"),
     )
 
-    data = ua.utils.Buffer(extensionobject_to_binary(obj), "utf-8")
+    data = ua.utils.Buffer(extensionobject_to_binary(obj))
     obj2 = extensionobject_from_binary(data)
     assert type(obj2) is ua.ExtensionObject
     assert obj2.TypeId == obj.TypeId
@@ -560,7 +560,7 @@ def test_unknown_extension_object():
 
 def test_extension_object_missing_length():
     obj = ua.DataChangeNotification()
-    binary = bytearray(extensionobject_to_binary(obj), "utf-8")
+    binary = bytearray(extensionobject_to_binary(obj))
 
     # Patch the binary to replace the correct length with -1 (i.e. missing),
     # which some old OPC/UA implementations mistakenly do.
@@ -621,8 +621,8 @@ def test_unicode_string_nodeid():
     assert nid.NamespaceIndex == 1
     assert nid.Identifier == "hëllò"
     assert nid.NodeIdType == ua.NodeIdType.String
-    d = nodeid_to_binary(nid, "utf-8")
-    new_nid = nodeid_from_binary(io.BytesIO(d), "utf-8")
+    d = nodeid_to_binary(nid)
+    new_nid = nodeid_from_binary(io.BytesIO(d))
     assert new_nid == nid
     assert new_nid.Identifier == "hëllò"
     assert new_nid.NodeIdType == ua.NodeIdType.String
@@ -876,7 +876,7 @@ def test_bname():
 
 def test_expandedNodeId():
     d = b"\x40\x55\x00\x00\x00\x00"
-    nid = nodeid_from_binary(ua.utils.Buffer(d), "utf-8")
+    nid = nodeid_from_binary(ua.utils.Buffer(d))
     assert isinstance(nid, ua.ExpandedNodeId)
     assert nid.ServerIndex == 0
     assert nid.Identifier == 85
